@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+  <meta charset="UTF-8">
+  <title>Kuiz BIG</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen" style="background: url('https://example.com/bg-abstrak.jpg') center/cover;">
+  <div id="login" class="max-w-md mx-auto mt-20 p-8 bg-white rounded shadow">
+    <h1 class="text-2xl font-bold">Login Kuiz BIG</h1>
+    <select id="quizSelect"><option value="1">Kuiz 1</option><option value="2">Kuiz 2</option></select>
+    <input id="noKP" placeholder="No KP" class="border p-2 w-full">
+    <button onclick="login()" class="bg-blue-600 text-white p-2">Login</button>
+  </div>
+
+  <div id="quiz" class="hidden max-w-2xl mx-auto mt-10">
+    <div id="timer" class="text-2xl text-red-600">Masa: 30:00</div>
+    <!-- Soalan rendered secara dinamik -->
+    <button onclick="submitQuiz()" class="bg-green-600 text-white p-4">Hantar</button>
+  </div>
+
+  <div id="admin" class="hidden">
+    <input id="adminPass" placeholder="Password Admin">
+    <button onclick="loadAdmin()">Lihat Hasil</button>
+    <!-- Table sort kelas + download CSV -->
+  </div>
+
+<script>
+  const API_URL = 'https://script.google.com/macros/s/XXX/exec'; // Ganti dengan URL anda
+
+  let timer;
+  let timeLeft = 1800; // 30 min
+  let cheatCount = 0;
+
+  function login() {
+    navigator.geolocation.getCurrentPosition(pos => {
+      const params = `action=login&quiz=${document.getElementById('quizSelect').value}&noKP=${document.getElementById('noKP').value}&lat=${pos.coords.latitude}&long=${pos.coords.longitude}`;
+      fetch(`${API_URL}?${params}`).then(r => r.json()).then(data => {
+        if (data.success) {
+          startQuiz();
+          requestFullscreen();
+        } else alert(data.msg);
+      });
+    }, () => alert('Geolocation diperlukan'));
+  }
+
+  function startQuiz() {
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('quiz').classList.remove('hidden');
+    startTimer();
+    detectCheat();
+    fetchQuestions();
+  }
+
+  function startTimer() {
+    timer = setInterval(() => {
+      timeLeft--;
+      document.getElementById('timer').innerText = `Masa: ${Math.floor(timeLeft/60)}:${timeLeft%60}`;
+      if (timeLeft <= 0) submitQuiz(true); // auto
+    }, 1000);
+  }
+
+  function detectCheat() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) {
+        cheatCount++;
+        if (cheatCount > 3) submitQuiz(true); // force submit as cheat
+      }
+    });
+    window.addEventListener('beforeunload', e => {
+      e.preventDefault();
+      e.returnValue = 'Jangan tutup! Markah hilang';
+    });
+  }
+
+  function requestFullscreen() {
+    document.documentElement.requestFullscreen();
+  }
+
+  // fetchQuestions(), submitQuiz() dll. guna fetch ke API
+</script>
+</body>
+</html>
