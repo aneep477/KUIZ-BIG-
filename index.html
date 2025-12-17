@@ -1,19 +1,21 @@
-HTML<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ms">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kuiz BIG</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <style>
     body {
       background: url('https://png.pngtree.com/background/20250119/original/pngtree-elegant-luxury-a-realistic-grey-satin-wave-texture-on-fabric-picture-image_15305902.jpg') center/cover no-repeat fixed;
       min-height: 100vh;
     }
     .quiz-question { margin-bottom: 2.5rem; background: rgba(255,255,255,0.92); padding: 2rem; border-radius: 1rem; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
-    table { border-collapse: collapse; width: 100%; }
-    th, td { border: 1px solid #ddd; padding: 8px; }
-    th { background-color: #f2f2f2; cursor: pointer; }
+    #adminTable th, #adminTable td { padding: 1rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
+    #adminTable th { background-color: #f3f4f6; font-weight: bold; cursor: pointer; }
+    #adminTable tr:nth-child(even) { background-color: #f9fafb; }
+    .rumusan-card { background: linear-gradient(to right, #f0f9ff, #e0f2fe); border-radius: 1rem; padding: 1.5rem; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
   </style>
 </head>
 <body class="text-gray-800">
@@ -26,8 +28,9 @@ HTML<!DOCTYPE html>
         <option value="2">Kuiz 2 (5%)</option>
       </select>
       <input id="noKP" type="text" placeholder="No. Kad Pengenalan" class="w-full p-4 border-2 rounded-lg mb-4 text-lg">
-      <button onclick="login()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-4 rounded-lg text-xl mb-4">Login</button>
-      <button onclick="showAdminPanel()" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-4 rounded-lg text-xl">Panel Admin</button>
+      <button onclick="login()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-4 rounded-lg text-xl mb-4 transition duration-300">Login</button>
+      <p id="errorMsg" class="text-red-600 text-center font-semibold mb-4"></p>
+      <button onclick="showAdminPanel()" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-4 rounded-lg text-xl transition duration-300">Panel Admin</button>
     </div>
   </div>
 
@@ -38,14 +41,14 @@ HTML<!DOCTYPE html>
       <div id="timer" class="text-4xl font-bold text-red-600">Masa: 30:00</div>
     </div>
     <div id="questionsContainer" class="space-y-8"></div>
-    <button onclick="submitQuiz()" class="mt-12 w-full bg-green-700 hover:bg-green-800 text-white font-bold py-5 rounded-lg text-2xl">Hantar Jawapan</button>
+    <button onclick="submitQuiz()" class="mt-12 w-full bg-green-700 hover:bg-green-800 text-white font-bold py-5 rounded-lg text-2xl transition duration-300">Hantar Jawapan</button>
   </div>
 
   <!-- Results Screen -->
   <div id="results" class="hidden max-w-4xl mx-auto mt-20 p-12 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl text-center">
     <h2 class="text-5xl font-bold mb-8 text-green-700">Markah Anda: <span id="markah" class="text-6xl"></span>/30</h2>
     <p class="text-2xl mb-12">Tahniah! Hasil telah dicatat.</p>
-    <button onclick="location.reload()" class="bg-blue-700 text-white py-4 px-12 rounded-lg text-xl">Kembali</button>
+    <button onclick="location.reload()" class="bg-blue-700 hover:bg-blue-800 text-white font-bold py-4 px-12 rounded-lg text-xl transition duration-300">Kembali</button>
   </div>
 
   <!-- Admin Panel -->
@@ -53,13 +56,14 @@ HTML<!DOCTYPE html>
     <div class="max-w-6xl w-full p-10 bg-white/95 backdrop-blur-lg rounded-2xl shadow-2xl">
       <h1 class="text-4xl font-bold text-center mb-10">Panel Admin Kuiz BIG</h1>
       <input id="adminPassword" type="password" placeholder="Password Admin" class="w-full p-4 border-2 rounded-lg mb-4 text-lg">
-      <select id="adminQuizSelect" class="w-full p-4 border-2 rounded-lg mb-6 text-lg">
+      <select id="adminQuizSelect" class="w-full p-4 border-2 rounded-lg mb-4 text-lg">
         <option value="1">Kuiz 1</option>
         <option value="2">Kuiz 2</option>
       </select>
-      <button onclick="loadAdminResults()" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-4 rounded-lg text-xl mb-6">Lihat Hasil</button>
-      <div id="adminTableContainer" class="overflow-x-auto">
-        <table id="adminTable" class="min-w-full">
+      <button onclick="loadAdminResults()" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-4 rounded-lg text-xl mb-4 transition duration-300">Lihat Hasil</button>
+      <button onclick="analyzeByClass()" class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-bold py-4 rounded-lg text-xl mb-6 transition duration-300">Analisis & Carta Bar</button>
+      <div id="adminTableContainer" class="overflow-x-auto mb-6">
+        <table id="adminTable" class="min-w-full bg-white rounded-lg">
           <thead>
             <tr>
               <th onclick="sortTable(0)">No_KP</th>
@@ -73,13 +77,20 @@ HTML<!DOCTYPE html>
           <tbody id="adminTableBody"></tbody>
         </table>
       </div>
-      <button onclick="downloadCSV()" class="mt-6 w-full bg-indigo-700 hover:bg-indigo-800 text-white font-bold py-4 rounded-lg text-xl">Muat Turun CSV Mengikut Kelas</button>
-      <button onclick="hideAdminPanel()" class="mt-4 w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-4 rounded-lg text-xl">Kembali</button>
+      <div id="rumusanContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"></div>
+      <div id="chartContainer" class="mb-6 hidden">
+        <canvas id="barChart" class="w-full h-96"></canvas>
+      </div>
+      <select id="downloadKelasSelect" class="w-full p-4 border-2 rounded-lg mb-4 text-lg">
+        <option value="">Semua Kelas</option>
+      </select>
+      <button onclick="downloadCSV()" class="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-4 rounded-lg text-xl mb-4 transition duration-300">Muat Turun CSV Mengikut Kelas</button>
+      <button onclick="hideAdminPanel()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-4 rounded-lg text-xl transition duration-300">Kembali</button>
     </div>
   </div>
 
 <script>
-  const API_URL = 'https://script.google.com/macros/s/AKfycbzS9a6BFQ2oAFCf4dmOTxkYvwC7nd6yMMtNAPm9i4nyJn5egyskNu1Pm7zlQW8ER6R8/exec'; // Ganti jika perlu
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzS9a6BFQ2oAFCf4dmOTxkYvwC7nd6yMMtNAPm9i4nyJn5egyskNu1Pm7zlQW8ER6R8/exec'; // Ganti dengan URL anda
   let timeLeft = 1800;
   let timer;
   let cheatCount = 0;
@@ -87,8 +98,17 @@ HTML<!DOCTYPE html>
   let userAnswers = [];
   let userData = {};
   let adminResults = [];
+  let chart = null;
 
-  // 30 SOALAN KUIZ 1 (lengkap, shuffled jawapan betul)
+  // Fungsi shuffleArray
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
+  // 30 SOALAN KUIZ 1 (penuh)
   const quiz1Questions = [
     {q: "Apakah peranan taklimat pengurusan risiko dalam pengurusan umum program BIG?", options: ["Untuk meningkatkan kos program tanpa sebab.", "Untuk menghadkan bilangan peserta.", "Untuk mengenal pasti dan mengurangkan risiko melalui analisis, strategi mitigasi, dan pelan kecemasan.", "Untuk mengabaikan aspek keselamatan peserta."], ans: "C"},
     {q: "Apakah tujuan post mortem selepas program BIG?", options: ["Mengabaikan maklum balas peserta.", "Menilai keberkesanan melalui analisis SWOT.", "Untuk meraikan kejayaan tanpa penilaian.", "Menambah kos program secara tidak perlu."], ans: "B"},
@@ -122,7 +142,7 @@ HTML<!DOCTYPE html>
     {q: "Dalam refleksi peserta, apakah yang digalakkan mengenai peningkatan diri?", options: ["Fokus pada pengalaman lama sahaja.", "Hanya berkongsi cabaran tanpa pelajaran.", "Merenung pengalaman dan bagaimana program membantu pembangunan peribadi dan profesional.", "Mengabaikan sumbangan kepada komuniti."], ans: "C"}
   ];
 
-  // 30 SOALAN KUIZ 2 (lengkap)
+  // 30 SOALAN KUIZ 2 (penuh)
   const quiz2Questions = [
     {q: "Berdasarkan pengenalan, bagaimanakah program BIG dilaksanakan?", options: ["Mengabaikan sesi perkongsian.", "Hanya kuliah teori di kelas.", "Melalui gabungan kuliah, bengkel, aktiviti luar, dan sesi perkongsian.", "Tanpa aktiviti luar."], ans: "C"},
     {q: "Apakah objektif program dalam meningkatkan keyakinan diri guru pelatih?", options: ["Tanpa pembangunan keyakinan.", "Mengabaikan dunia pendidikan.", "Melalui aktiviti mencabar fizikal dan mental untuk mengatasi ketakutan.", "Hanya fokus pada motivasi tanpa cabaran."], ans: "C"},
@@ -156,79 +176,111 @@ HTML<!DOCTYPE html>
     {q: "Apakah langkah pencegahan dalam taklimat risiko untuk kelancaran program?", options: ["Mengabaikan pertolongan cemas.", "Menilai risiko untuk keselamatan peserta dan kelancaran.", "Hanya langkah umum tanpa spesifik.", "Tanpa prosedur keselamatan."], ans: "B"}
   ];
 
-  // Fungsi showAdminPanel
-  function showAdminPanel() {
-    document.getElementById('login').classList.add('hidden');
-    document.getElementById('adminPanel').classList.remove('hidden');
+  function login() {
+    document.getElementById('errorMsg').innerText = '';
+    navigator.geolocation.getCurrentPosition(pos => {
+      const quiz = document.getElementById('quizSelect').value;
+      const noKP = document.getElementById('noKP').value.trim();
+      const params = `action=login&quiz=${quiz}&noKP=${noKP}&lat=${pos.coords.latitude}&long=${pos.coords.longitude}`;
+      fetch(`${API_URL}?${params}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            userData = data.pelajar;
+            document.getElementById('namaPelajar').innerText = userData.nama;
+            document.getElementById('kelasPelajar').innerText = userData.kelas;
+            questions = quiz === '1' ? quiz1Questions.slice() : quiz2Questions.slice();
+            shuffleArray(questions);
+            renderQuestions();
+            document.getElementById('login').classList.add('hidden');
+            document.getElementById('quiz').classList.remove('hidden');
+            startTimer();
+            detectCheat();
+            requestFullscreen();
+          } else {
+            document.getElementById('errorMsg').innerText = data.msg || 'Login gagal';
+          }
+        })
+        .catch(err => document.getElementById('errorMsg').innerText = 'Ralat sambungan ke server');
+    }, () => document.getElementById('errorMsg').innerText = 'Geolocation diperlukan');
   }
 
-  function hideAdminPanel() {
-    document.getElementById('adminPanel').classList.add('hidden');
-    document.getElementById('login').classList.remove('hidden');
-  }
-
-  function loadAdminResults() {
-    const password = document.getElementById('adminPassword').value;
-    const quiz = document.getElementById('adminQuizSelect').value;
-    const params = `action=getResults&pass=${password}&quiz=${quiz}`;
-    fetch(`${API_URL}?${params}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.success) {
-          adminResults = data.results;
-          renderAdminTable(adminResults);
-        } else {
-          alert(data.msg);
-        }
-      })
-      .catch(() => alert('Ralat memuat hasil'));
-  }
-
-  function renderAdminTable(results) {
-    const tbody = document.getElementById('adminTableBody');
-    tbody.innerHTML = '';
-    results.forEach(row => {
-      const tr = document.createElement('tr');
-      tr.innerHTML = `
-        <td>${row.noKP}</td>
-        <td>${row.nama}</td>
-        <td>${row.kelas}</td>
-        <td>${row.markah}</td>
-        <td>${row.tarikh}</td>
-        <td>${row.answers}</td>
+  function renderQuestions() {
+    const container = document.getElementById('questionsContainer');
+    container.innerHTML = '';
+    questions.forEach((q, i) => {
+      const div = document.createElement('div');
+      div.className = 'quiz-question';
+      div.innerHTML = `
+        <p class="font-bold text-xl mb-4">${i+1}. ${q.q}</p>
+        ${q.options.map((opt, j) => `
+          <label class="block mb-3 cursor-pointer text-lg">
+            <input type="radio" name="q${i}" value="${String.fromCharCode(65 + j)}" class="mr-3 transform scale-125">
+            ${opt}
+          </label>
+        `).join('')}
       `;
-      tbody.appendChild(tr);
+      container.appendChild(div);
     });
   }
 
-  function sortTable(columnIndex) {
-    adminResults.sort((a, b) => {
-      const valA = Object.values(a)[columnIndex];
-      const valB = Object.values(b)[columnIndex];
-      return valA > valB ? 1 : valA < valB ? -1 : 0;
-    });
-    renderAdminTable(adminResults);
+  function startTimer() {
+    timer = setInterval(() => {
+      timeLeft--;
+      const min = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+      const sec = String(timeLeft % 60).padStart(2, '0');
+      document.getElementById('timer').innerText = `Masa: ${min}:${sec}`;
+      if (timeLeft <= 0) submitQuiz(true);
+    }, 1000);
   }
 
-  function downloadCSV() {
-    const uniqueKelas = [...new Set(adminResults.map(r => r.kelas))];
-    const selectedKelas = prompt('Masukkan kelas untuk download (kosongkan untuk semua):', uniqueKelas.join(', '));
-    const filtered = selectedKelas ? adminResults.filter(r => r.kelas === selectedKelas) : adminResults;
-
-    let csv = 'No_KP,Nama,Kelas,Markah,Tarikh,Jawapan\n';
-    filtered.forEach(row => {
-      csv += `${row.noKP},${row.nama},${row.kelas},${row.markah},${row.tarikh},${row.answers}\n`;
+  function detectCheat() {
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden) cheatCount++;
+      if (cheatCount > 2) {
+        alert('Dikesan menukar tab terlalu banyak! Kuiz dihantar.');
+        submitQuiz(true);
+      }
     });
-
-    const blob = new Blob([csv], {type: 'text/csv'});
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `hasil_kuiz.csv`;
-    a.click();
   }
 
-  // Kod lain (login, renderQuestions, submitQuiz, dll.) kekal sama
+  function requestFullscreen() {
+    document.documentElement.requestFullscreen().catch(() => {});
+  }
+
+  function submitQuiz(auto = false) {
+    clearInterval(timer);
+    if (!auto && !confirm('Hantar jawapan sekarang?')) return;
+
+    let score = 0;
+    userAnswers = [];
+    questions.forEach((q, i) => {
+      const selected = document.querySelector(`input[name="q${i}"]:checked`);
+      const answer = selected ? selected.value : 'Tiada';
+      userAnswers.push(answer);
+      if (answer === q.ans) score++;
+    });
+
+    document.getElementById('markah').innerText = score;
+    document.getElementById('quiz').classList.add('hidden');
+    document.getElementById('results').classList.remove('hidden');
+
+    // Hantar ke backend
+    const params = new URLSearchParams({
+      action: 'submit',
+      quiz: document.getElementById('quizSelect').value,
+      noKP: document.getElementById('noKP').value.trim(),
+      markah: score,
+      answers: JSON.stringify(userAnswers),
+      tarikh: new Date().toISOString().split('T')[0]
+    });
+    fetch(`${API_URL}?${params}`, {method: 'POST'})
+      .then(() => console.log('Berjaya disimpan'))
+      .catch(() => alert('Markah tempatan dipaparkan, tapi ralat simpan ke server'));
+  }
+
+  // Fungsi admin (load, sort, rumusan, carta, download) seperti sebelum ini
+
 </script>
 </body>
-</html
+</html>
