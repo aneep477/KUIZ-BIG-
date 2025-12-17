@@ -12,9 +12,10 @@
       min-height: 100vh;
     }
     .quiz-question { margin-bottom: 2.5rem; background: rgba(255,255,255,0.92); padding: 2rem; border-radius: 1rem; box-shadow: 0 6px 20px rgba(0,0,0,0.15); }
+    #adminTable { width: 100%; border-collapse: separate; border-spacing: 0; }
     #adminTable th, #adminTable td { padding: 1rem; text-align: left; border-bottom: 1px solid #e5e7eb; }
     #adminTable th { background-color: #f3f4f6; font-weight: bold; cursor: pointer; }
-    #adminTable tr:nth-child(even) { background-color: #f9fafb; }
+    #adminTable tr:hover { background-color: #eef2ff; }
     .rumusan-card { background: linear-gradient(to right, #f0f9ff, #e0f2fe); border-radius: 1rem; padding: 1.5rem; margin: 1rem 0; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
   </style>
 </head>
@@ -29,7 +30,7 @@
       </select>
       <input id="noKP" type="text" placeholder="No. Kad Pengenalan" class="w-full p-4 border-2 rounded-lg mb-4 text-lg">
       <button onclick="login()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-4 rounded-lg text-xl mb-4 transition duration-300">Login</button>
-      <p id="errorMsg" class="text-red-600 text-center font-semibold mb-4"></p>
+      <p id="errorMsg" class="text-red-600 text-center font-bold mb-4"></p>
       <button onclick="showAdminPanel()" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-4 rounded-lg text-xl transition duration-300">Panel Admin</button>
     </div>
   </div>
@@ -61,10 +62,10 @@
         <option value="2">Kuiz 2</option>
       </select>
       <button onclick="loadAdminResults()" class="w-full bg-purple-700 hover:bg-purple-800 text-white font-bold py-4 rounded-lg text-xl mb-4 transition duration-300">Lihat Hasil</button>
-      <button onclick="analyzeByClass()" class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-bold py-4 rounded-lg text-xl mb-6 transition duration-300">Analisis & Carta Bar</button>
+      <button onclick="analyzeByClass()" class="w-full bg-indigo-700 hover:bg-indigo-800 text-white font-bold py-4 rounded-lg text-xl mb-6 transition duration-300">Analisis & Carta Bar Mengikut Kelas</button>
       <div id="adminTableContainer" class="overflow-x-auto mb-6">
         <table id="adminTable" class="min-w-full bg-white rounded-lg">
-          <thead>
+          <thead class="bg-indigo-100">
             <tr>
               <th onclick="sortTable(0)">No_KP</th>
               <th onclick="sortTable(1)">Nama</th>
@@ -79,18 +80,18 @@
       </div>
       <div id="rumusanContainer" class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6"></div>
       <div id="chartContainer" class="mb-6 hidden">
-        <canvas id="barChart" class="w-full h-96"></canvas>
+        <canvas id="barChart" class="w-full h-96 bg-white p-6 rounded-lg shadow"></canvas>
       </div>
       <select id="downloadKelasSelect" class="w-full p-4 border-2 rounded-lg mb-4 text-lg">
         <option value="">Semua Kelas</option>
       </select>
       <button onclick="downloadCSV()" class="w-full bg-green-700 hover:bg-green-800 text-white font-bold py-4 rounded-lg text-xl mb-4 transition duration-300">Muat Turun CSV Mengikut Kelas</button>
-      <button onclick="hideAdminPanel()" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-4 rounded-lg text-xl transition duration-300">Kembali</button>
+      <button onclick="hideAdminPanel()" class="w-full bg-gray-600 hover:bg-gray-700 text-white font-bold py-4 rounded-lg text-xl transition duration-300">Kembali</button>
     </div>
   </div>
 
 <script>
-  const API_URL = 'https://script.google.com/macros/s/AKfycbzS9a6BFQ2oAFCf4dmOTxkYvwC7nd6yMMtNAPm9i4nyJn5egyskNu1Pm7zlQW8ER6R8/exec'; // Ganti dengan URL anda
+  const API_URL = 'https://script.google.com/macros/s/AKfycbzS9a6BFQ2oAFCf4dmOTxkYvwC7nd6yMMtNAPm9i4nyJn5egyskNu1Pm7zlQW8ER6R8/exec'; // Ganti dengan URL Apps Script anda
   let timeLeft = 1800;
   let timer;
   let cheatCount = 0;
@@ -108,7 +109,7 @@
     }
   }
 
-  // 30 SOALAN KUIZ 1 (penuh)
+  // 30 SOALAN KUIZ 1 (lengkap)
   const quiz1Questions = [
     {q: "Apakah peranan taklimat pengurusan risiko dalam pengurusan umum program BIG?", options: ["Untuk meningkatkan kos program tanpa sebab.", "Untuk menghadkan bilangan peserta.", "Untuk mengenal pasti dan mengurangkan risiko melalui analisis, strategi mitigasi, dan pelan kecemasan.", "Untuk mengabaikan aspek keselamatan peserta."], ans: "C"},
     {q: "Apakah tujuan post mortem selepas program BIG?", options: ["Mengabaikan maklum balas peserta.", "Menilai keberkesanan melalui analisis SWOT.", "Untuk meraikan kejayaan tanpa penilaian.", "Menambah kos program secara tidak perlu."], ans: "B"},
@@ -142,7 +143,7 @@
     {q: "Dalam refleksi peserta, apakah yang digalakkan mengenai peningkatan diri?", options: ["Fokus pada pengalaman lama sahaja.", "Hanya berkongsi cabaran tanpa pelajaran.", "Merenung pengalaman dan bagaimana program membantu pembangunan peribadi dan profesional.", "Mengabaikan sumbangan kepada komuniti."], ans: "C"}
   ];
 
-  // 30 SOALAN KUIZ 2 (penuh)
+  // 30 SOALAN KUIZ 2 (lengkap)
   const quiz2Questions = [
     {q: "Berdasarkan pengenalan, bagaimanakah program BIG dilaksanakan?", options: ["Mengabaikan sesi perkongsian.", "Hanya kuliah teori di kelas.", "Melalui gabungan kuliah, bengkel, aktiviti luar, dan sesi perkongsian.", "Tanpa aktiviti luar."], ans: "C"},
     {q: "Apakah objektif program dalam meningkatkan keyakinan diri guru pelatih?", options: ["Tanpa pembangunan keyakinan.", "Mengabaikan dunia pendidikan.", "Melalui aktiviti mencabar fizikal dan mental untuk mengatasi ketakutan.", "Hanya fokus pada motivasi tanpa cabaran."], ans: "C"},
@@ -181,6 +182,10 @@
     navigator.geolocation.getCurrentPosition(pos => {
       const quiz = document.getElementById('quizSelect').value;
       const noKP = document.getElementById('noKP').value.trim();
+      if (!noKP) {
+        document.getElementById('errorMsg').innerText = 'Sila isi No_KP';
+        return;
+      }
       const params = `action=login&quiz=${quiz}&noKP=${noKP}&lat=${pos.coords.latitude}&long=${pos.coords.longitude}`;
       fetch(`${API_URL}?${params}`)
         .then(r => r.json())
@@ -198,11 +203,11 @@
             detectCheat();
             requestFullscreen();
           } else {
-            document.getElementById('errorMsg').innerText = data.msg || 'Login gagal';
+            document.getElementById('errorMsg').innerText = data.msg || 'Login gagal. Semak No_KP, lokasi, atau tarikh kuiz.';
           }
         })
         .catch(err => document.getElementById('errorMsg').innerText = 'Ralat sambungan ke server');
-    }, () => document.getElementById('errorMsg').innerText = 'Geolocation diperlukan');
+    }, () => document.getElementById('errorMsg').innerText = 'Geolocation diperlukan. Benarkan akses.');
   }
 
   function renderQuestions() {
@@ -279,8 +284,160 @@
       .catch(() => alert('Markah tempatan dipaparkan, tapi ralat simpan ke server'));
   }
 
-  // Fungsi admin (load, sort, rumusan, carta, download) seperti sebelum ini
+  function showAdminPanel() {
+    document.getElementById('login').classList.add('hidden');
+    document.getElementById('adminPanel').classList.remove('hidden');
+  }
 
+  function hideAdminPanel() {
+    document.getElementById('adminPanel').classList.add('hidden');
+    document.getElementById('login').classList.remove('hidden');
+  }
+
+  function loadAdminResults() {
+    const password = document.getElementById('adminPassword').value.trim();
+    if (!password) {
+      alert('Sila isi password admin');
+      return;
+    }
+    const quiz = document.getElementById('adminQuizSelect').value;
+    const params = `action=getResults&pass=${encodeURIComponent(password)}&quiz=${quiz}`;
+    fetch(`${API_URL}?${params}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          adminResults = data.results;
+          renderAdminTable(adminResults);
+          renderRumusan(adminResults);
+          populateKelasDropdown(adminResults);
+        } else {
+          alert(data.msg || 'Password salah atau tiada data');
+        }
+      })
+      .catch(() => alert('Ralat sambungan'));
+  }
+
+  function renderAdminTable(results) {
+    const tbody = document.getElementById('adminTableBody');
+    tbody.innerHTML = '';
+    results.forEach(row => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td>${row.noKP}</td>
+        <td>${row.nama}</td>
+        <td>${row.kelas}</td>
+        <td>${row.markah}</td>
+        <td>${row.tarikh}</td>
+        <td>${row.answers}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  }
+
+  function sortTable(columnIndex) {
+    adminResults.sort((a, b) => {
+      const valA = Object.values(a)[columnIndex];
+      const valB = Object.values(b)[columnIndex];
+      return valA > valB ? 1 : valA < valB ? -1 : 0;
+    });
+    renderAdminTable(adminResults);
+  }
+
+  function renderRumusan(results) {
+    const container = document.getElementById('rumusanContainer');
+    container.innerHTML = '';
+    const classStats = {};
+    results.forEach(row => {
+      const kelas = row.kelas;
+      if (!classStats[kelas]) classStats[kelas] = {markah: [], count: 0};
+      classStats[kelas].markah.push(Number(row.markah));
+      classStats[kelas].count++;
+    });
+
+    Object.keys(classStats).forEach(kelas => {
+      const stats = classStats[kelas];
+      const purata = (stats.markah.reduce((a, b) => a + b, 0) / stats.count).toFixed(2);
+      const min = Math.min(...stats.markah);
+      const max = Math.max(...stats.markah);
+      const card = document.createElement('div');
+      card.className = 'rumusan-card';
+      card.innerHTML = `
+        <h3 class="text-xl font-bold mb-2">Rumusan Kelas ${kelas}</h3>
+        <p>Jumlah Peserta: ${stats.count}</p>
+        <p>Purata Markah: ${purata}</p>
+        <p>Markah Min: ${min}</p>
+        <p>Markah Max: ${max}</p>
+      `;
+      container.appendChild(card);
+    });
+  }
+
+  function populateKelasDropdown(results) {
+    const select = document.getElementById('downloadKelasSelect');
+    select.innerHTML = '<option value="">Semua Kelas</option>';
+    const uniqueKelas = [...new Set(results.map(r => r.kelas))];
+    uniqueKelas.forEach(kelas => {
+      const option = document.createElement('option');
+      option.value = kelas;
+      option.text = kelas;
+      select.add(option);
+    });
+  }
+
+  function downloadCSV() {
+    const selectedKelas = document.getElementById('downloadKelasSelect').value;
+    const filtered = selectedKelas ? adminResults.filter(r => r.kelas === selectedKelas) : adminResults;
+
+    let csv = 'No_KP,Nama,Kelas,Markah,Tarikh,Jawapan\n';
+    filtered.forEach(row => {
+      csv += `${row.noKP},${row.nama},${row.kelas},${row.markah},${row.tarikh},${row.answers}\n`;
+    });
+
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `hasil_kuiz_${selectedKelas || 'semua'}.csv`;
+    a.click();
+  }
+
+  function analyzeByClass() {
+    const password = document.getElementById('adminPassword').value.trim();
+    if (!password) {
+      alert('Sila isi password admin');
+      return;
+    }
+    const quiz = document.getElementById('adminQuizSelect').value;
+    const params = `action=getAnalysis&pass=${encodeURIComponent(password)}&quiz=${quiz}`;
+    fetch(`${API_URL}?${params}`)
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          document.getElementById('chartContainer').classList.remove('hidden');
+          if (chart) chart.destroy();
+          const ctx = document.getElementById('barChart').getContext('2d');
+          chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+              labels: data.analysis.map(a => a.kelas),
+              datasets: [{
+                label: 'Purata Markah',
+                data: data.analysis.map(a => a.purataMarkah),
+                backgroundColor: 'rgba(59, 130, 246, 0.6)',
+                borderColor: 'rgba(59, 130, 246, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: { y: { beginAtZero: true } }
+            }
+          });
+        } else {
+          alert(data.msg || 'Password salah atau tiada data');
+        }
+      })
+      .catch(() => alert('Ralat memuat analisis'));
+  }
 </script>
 </body>
 </html>
