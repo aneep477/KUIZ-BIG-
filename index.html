@@ -2,46 +2,125 @@
 <html lang="ms">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Kuiz BIG</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      background: url('bg.jpg') center/cover no-repeat fixed; /* Upload imej ke repo */
+      /* Atau guna direct URL percuma: url('https://slideuplift.com/wp-content/uploads/2024/04/ItemID-11347-White-Textured-Waves-background-image-16x9-2.jpg') */
+    }
+    .quiz-question { margin-bottom: 2rem; }
+  </style>
 </head>
-<body class="bg-gray-100 min-h-screen" style="background: url('https://example.com/bg-abstrak.jpg') center/cover;">
-  <div id="login" class="max-w-md mx-auto mt-20 p-8 bg-white rounded shadow">
-    <h1 class="text-2xl font-bold">Login Kuiz BIG</h1>
-    <select id="quizSelect"><option value="1">Kuiz 1</option><option value="2">Kuiz 2</option></select>
-    <input id="noKP" placeholder="No KP" class="border p-2 w-full">
-    <button onclick="login()" class="bg-blue-600 text-white p-2">Login</button>
+<body class="min-h-screen text-gray-800">
+  <!-- Login Screen -->
+  <div id="login" class="flex items-center justify-center min-h-screen">
+    <div class="max-w-md w-full p-8 bg-white/90 backdrop-blur rounded-xl shadow-2xl">
+      <h1 class="text-3xl font-bold text-center mb-8">Login Kuiz BIG</h1>
+      <select id="quizSelect" class="w-full p-3 border rounded mb-4">
+        <option value="1">Kuiz 1 (5%)</option>
+        <option value="2">Kuiz 2 (5%)</option>
+      </select>
+      <input id="noKP" type="text" placeholder="No. Kad Pengenalan" class="w-full p-3 border rounded mb-6">
+      <button onclick="login()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded">Login</button>
+    </div>
   </div>
 
-  <div id="quiz" class="hidden max-w-2xl mx-auto mt-10">
-    <div id="timer" class="text-2xl text-red-600">Masa: 30:00</div>
-    <!-- Soalan rendered secara dinamik -->
-    <button onclick="submitQuiz()" class="bg-green-600 text-white p-4">Hantar</button>
+  <!-- Quiz Screen -->
+  <div id="quiz" class="hidden max-w-4xl mx-auto mt-10 p-8 bg-white/90 backdrop-blur rounded-xl shadow-2xl">
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h2 class="text-2xl font-bold">Selamat Datang, <span id="namaPelajar"></span> (<span id="kelasPelajar"></span>)</h2>
+      </div>
+      <div id="timer" class="text-3xl font-bold text-red-600">Masa: 30:00</div>
+    </div>
+    <div id="questionsContainer"></div>
+    <button onclick="submitQuiz()" class="mt-10 w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded text-xl">Hantar Jawapan</button>
   </div>
 
-  <div id="admin" class="hidden">
-    <input id="adminPass" placeholder="Password Admin">
-    <button onclick="loadAdmin()">Lihat Hasil</button>
-    <!-- Table sort kelas + download CSV -->
+  <!-- Results Screen -->
+  <div id="results" class="hidden max-w-4xl mx-auto mt-10 p-8 bg-white/90 backdrop-blur rounded-xl shadow-2xl text-center">
+    <h2 class="text-3xl font-bold mb-6">Markah Anda: <span id="markah"></span>/30</h2>
+    <p class="text-xl mb-8">Tahniah! Kuiz selesai.</p>
+    <button onclick="location.reload()" class="bg-blue-600 text-white py-3 px-8 rounded">Kembali ke Login</button>
+  </div>
+
+  <!-- Admin Panel -->
+  <div id="admin" class="hidden max-w-6xl mx-auto mt-10 p-8 bg-white/90 backdrop-blur rounded-xl shadow-2xl">
+    <h2 class="text-3xl font-bold mb-6">Panel Admin - Hasil Kuiz</h2>
+    <input id="adminPass" type="password" placeholder="Password Admin" class="p-3 border rounded mb-4">
+    <button onclick="loadAdmin()" class="bg-purple-600 text-white py-3 px-6 rounded">Lihat Hasil</button>
+    <div id="adminTable" class="mt-8"></div>
   </div>
 
 <script>
   const API_URL = 'https://script.google.com/macros/s/AKfycbzS9a6BFQ2oAFCf4dmOTxkYvwC7nd6yMMtNAPm9i4nyJn5egyskNu1Pm7zlQW8ER6R8/exec'; // Ganti dengan URL anda
-
+  let timeLeft = 1800; // 30 minit
   let timer;
-  let timeLeft = 1800; // 30 min
   let cheatCount = 0;
+  let questions = [];
+  let answers = {};
+
+  // Hardcoded 30 soalan Kuiz 1 & 2 (shuffled version dari sebelum ini)
+  const quiz1Questions = [
+    {q: "Apakah peranan taklimat pengurusan risiko dalam pengurusan umum program BIG?", options: ["Untuk meningkatkan kos program tanpa sebab.", "Untuk menghadkan bilangan peserta.", "Untuk mengenal pasti dan mengurangkan risiko melalui analisis, strategi mitigasi, dan pelan kecemasan.", "Untuk mengabaikan aspek keselamatan peserta."], ans: "C"},
+    // ... (tambahkan 29 lagi dari senarai shuffled Kuiz 1)
+    {q: "Dalam refleksi peserta, apakah yang digalakkan mengenai peningkatan diri?", options: ["Fokus pada pengalaman lama sahaja.", "Hanya berkongsi cabaran tanpa pelajaran.", "Merenung pengalaman dan bagaimana program membantu pembangunan peribadi dan profesional.", "Mengabaikan sumbangan kepada komuniti."], ans: "C"}
+  ];
+
+  const quiz2Questions = [
+    // ... 30 soalan Kuiz 2
+  ];
 
   function login() {
     navigator.geolocation.getCurrentPosition(pos => {
-      const params = `action=login&quiz=${document.getElementById('quizSelect').value}&noKP=${document.getElementById('noKP').value}&lat=${pos.coords.latitude}&long=${pos.coords.longitude}`;
-      fetch(`${API_URL}?${params}`).then(r => r.json()).then(data => {
-        if (data.success) {
-          startQuiz();
-          requestFullscreen();
-        } else alert(data.msg);
-      });
-    }, () => alert('Geolocation diperlukan'));
+      const quiz = document.getElementById('quizSelect').value;
+      const noKP = document.getElementById('noKP').value.trim();
+      const params = `action=login&quiz=${quiz}&noKP=${noKP}&lat=${pos.coords.latitude}&long=${pos.coords.longitude}`;
+      fetch(`${API_URL}?${params}`)
+        .then(r => r.json())
+        .then(data => {
+          if (data.success) {
+            document.getElementById('namaPelajar').innerText = data.pelajar.nama;
+            document.getElementById('kelasPelajar').innerText = data.pelajar.kelas;
+            questions = quiz === '1' ? quiz1Questions : quiz2Questions;
+            shuffleArray(questions);
+            renderQuestions();
+            startQuiz();
+            requestFullscreen();
+          } else {
+            alert(data.msg || 'Login gagal');
+          }
+        })
+        .catch(() => alert('Ralat sambungan ke server'));
+    }, () => alert('Geolocation diperlukan untuk kuiz ini'));
+  }
+
+  function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+  }
+
+  function renderQuestions() {
+    const container = document.getElementById('questionsContainer');
+    container.innerHTML = '';
+    questions.forEach((q, i) => {
+      const div = document.createElement('div');
+      div.className = 'quiz-question bg-gray-50 p-6 rounded-lg';
+      div.innerHTML = `
+        <p class="font-semibold text-lg mb-4">${i+1}. ${q.q}</p>
+        ${q.options.map((opt, j) => `
+          <label class="block mb-2 cursor-pointer">
+            <input type="radio" name="q${i}" value="${['A','B','C','D'][j]}" class="mr-3">
+            ${opt}
+          </label>
+        `).join('')}
+      `;
+      container.appendChild(div);
+    });
   }
 
   function startQuiz() {
@@ -49,14 +128,15 @@
     document.getElementById('quiz').classList.remove('hidden');
     startTimer();
     detectCheat();
-    fetchQuestions();
   }
 
   function startTimer() {
     timer = setInterval(() => {
       timeLeft--;
-      document.getElementById('timer').innerText = `Masa: ${Math.floor(timeLeft/60)}:${timeLeft%60}`;
-      if (timeLeft <= 0) submitQuiz(true); // auto
+      const min = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      const sec = (timeLeft % 60).toString().padStart(2, '0');
+      document.getElementById('timer').innerText = `Masa: ${min}:${sec}`;
+      if (timeLeft <= 0) submitQuiz(true);
     }, 1000);
   }
 
@@ -64,20 +144,42 @@
     document.addEventListener('visibilitychange', () => {
       if (document.hidden) {
         cheatCount++;
-        if (cheatCount > 3) submitQuiz(true); // force submit as cheat
+        if (cheatCount > 2) {
+          alert('Dikesan menukar tab terlalu banyak kali. Kuiz dihantar automatik.');
+          submitQuiz(true);
+        }
       }
     });
-    window.addEventListener('beforeunload', e => {
-      e.preventDefault();
-      e.returnValue = 'Jangan tutup! Markah hilang';
-    });
+    window.addEventListener('blur', () => cheatCount++);
   }
 
   function requestFullscreen() {
-    document.documentElement.requestFullscreen();
+    document.documentElement.requestFullscreen().catch(() => alert('Fullscreen diperlukan'));
   }
 
-  // fetchQuestions(), submitQuiz() dll. guna fetch ke API
+  function submitQuiz(auto = false) {
+    clearInterval(timer);
+    if (!auto && !confirm('Anda pasti mahu hantar jawapan?')) return;
+
+    let score = 0;
+    questions.forEach((q, i) => {
+      const selected = document.querySelector(`input[name="q${i}"]:checked`);
+      answers[i] = selected ? selected.value : 'Tiada';
+      if (selected && selected.value === q.ans) score++;
+    });
+
+    document.getElementById('quiz').classList.add('hidden');
+    document.getElementById('results').classList.remove('hidden');
+    document.getElementById('markah').innerText = score;
+
+    // Hantar ke backend (jika connect)
+    // fetch(`${API_URL}?action=submit&...`)
+  }
+
+  // Admin panel ringkas (fetch dari backend)
+  function loadAdmin() {
+    // Implement fetch admin results
+  }
 </script>
 </body>
 </html>
